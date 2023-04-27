@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:blasting",
+  "ingredient": {
+    "item": "toolfarming:rawcitrine"
+  },
+  "result": "toolfarming:citrine",
+  "experience": 0.7,
+  "cookingtime": 100
+}

@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "toolfarming",
+	"version": "0.1",
+	"name": "Tool Farming",
+	"description": "This mod adds crops which allow the crafting of items with the ability to level up.",
+	"authors": [
+		"Soureus"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"sour.toolfarming.ToolFarming"
+		],
+		"client": [
+			"sour.toolfarming.TooFarmingClient"
+		],		"fabric-datagen": [
+			"sour.toolfarming.ToolFarmingDataGenerator"
+		]
+	},
+	"mixins": [
+      "toolfarming.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.19",
+		"minecraft": "~1.19.4",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
