@@ -17,6 +17,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
@@ -34,17 +36,19 @@ public class LevelingSwordItem extends LevelingToolItem {
     ArrayList<Float> attackDamages;
     ArrayList<Float> attackSpeeds;
     private final Multimap<EntityAttribute, EntityAttributeModifier> attributeModifiers;
+    ToolMaterial material;
 
     public LevelingSwordItem(ToolMaterial material, ArrayList<Float> attackDamages, ArrayList<Float> attackSpeeds, int maxLevel, ArrayList<Float> levelsXp, Item.Settings settings) {
         super(material, settings, maxLevel, levelsXp);
         this.attackDamages = attackDamages;
         this.attackSpeeds = attackSpeeds;
+        this.material = material;
 
         setAttackDamages();
 
         ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder = ImmutableMultimap.builder();
-        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", (double)this.attackDamages.get(0), EntityAttributeModifier.Operation.ADDITION));
-        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Weapon modifier", (double)attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", (double) this.attackDamages.get(0) + material.getAttackDamage(), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Weapon modifier", (double) attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
         this.attributeModifiers = builder.build();
     }
 
@@ -70,12 +74,13 @@ public class LevelingSwordItem extends LevelingToolItem {
         stack.damage(1, attacker, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
 
         increaseXp(stack, attacker, target);
+        setStackModifiers(stack);
 
         return true;
     }
 
 
-    protected void increaseXp(ItemStack stack, LivingEntity attacker, LivingEntity target){
+    protected void increaseXp(ItemStack stack, LivingEntity attacker, LivingEntity target) {
 
         NbtCompound nbt = stack.getOrCreateNbt();
 
@@ -84,30 +89,49 @@ public class LevelingSwordItem extends LevelingToolItem {
         PlayerEntity player = (PlayerEntity) attacker;
 
         if (spawnGroup != SpawnGroup.MISC) {
-            if (spawnGroup.isPeaceful()){
-                setCurrentXp(nbt, getCurrentXp(nbt)+0.5f);
-            }else {
-                setCurrentXp(nbt, getCurrentXp(nbt)+50f);
+            if (spawnGroup.isPeaceful()) {
+                setCurrentXp(nbt, getCurrentXp(nbt) + 0.5f);
+            } else {
+                setCurrentXp(nbt, getCurrentXp(nbt) + 50f);
             }
         }
 
         setNbtData(stack);
 
-        if (getCurrentXp(nbt) == getCurrentLvlXp(nbt)){
-            levelUp(nbt);
+        if (getCurrentXp(nbt) >= getCurrentLvlXp(nbt)) {
+            levelUp(nbt, stack);
             player.sendMessage(Text.literal(stack.getName().getContent() + "Has leveled up to level " + getCurrentLevel(nbt)));
         }
 
     }
 
-    protected void setNbtData(ItemStack stack){
+    protected void setNbtData(ItemStack stack) {
         NbtCompound nbt = stack.getOrCreateNbt();
 
         assert nbt != null;
-        if(getCurrentLevel(nbt) != getMAX_LEVEL()) {
+        if (getCurrentLevel(nbt) != getMAX_LEVEL()) {
             nbt.putFloat("toolfarming.levelTool.lvl_xp_current", this.getCurrentLvlXp(nbt));
         }
 
+
+    }
+
+    @Override
+    public void levelUp(NbtCompound nbt, ItemStack stack) {
+        super.levelUp(nbt, stack);
+       setStackModifiers(stack);
+    }
+
+    public void setStackModifiers(ItemStack stack){
+
+        NbtCompound nbt = stack.getOrCreateNbt();
+
+        if (nbt.contains("AttributeModifiers", NbtElement.LIST_TYPE)) {
+            nbt.remove("AttributeModifiers");
+        }
+
+        stack.addAttributeModifier(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", getCurrentAttackDamage(nbt), EntityAttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND);
+        stack.addAttributeModifier(EntityAttributes.GENERIC_ATTACK_SPEED,new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Weapon modifier", getCurrentAttackSpeed(nbt), EntityAttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND);
 
     }
 
@@ -116,19 +140,28 @@ public class LevelingSwordItem extends LevelingToolItem {
 
         NbtCompound nbt = stack.getOrCreateNbt();
 
-            if(getCurrentLevel(nbt) != getMAX_LEVEL()) {
-                nbt.putString("toolfarming.levelTool.xp_progression", "XP: " + this.getCurrentXp(nbt) + "/" + this.getCurrentLvlXp(nbt));
-            }else {
-                nbt.putString("toolfarming.levelTool.xp_progression", "MAX LVL");
-            }
+        if (getCurrentLevel(nbt) != getMAX_LEVEL()) {
+            nbt.putString("toolfarming.levelTool.xp_progression", "XP: " + this.getCurrentXp(nbt) + "/" + this.getCurrentLvlXp(nbt));
+        } else {
+            nbt.putString("toolfarming.levelTool.xp_progression", "MAX LVL");
+        }
 
-            nbt.putString("toolfarming.levelTool.levelProgression", "Level " + this.getCurrentLevel(nbt) + "/" + this.getMAX_LEVEL());
+        nbt.putString("toolfarming.levelTool.levelProgression", "Level " + this.getCurrentLevel(nbt) + "/" + this.getMAX_LEVEL());
 
-            assert stack.getNbt() != null;
-            String currentXp = stack.getNbt().getString("toolfarming.levelTool.xp_progression");
-            String currentLvl = stack.getNbt().getString("toolfarming.levelTool.levelProgression");
-            tooltip.add(Text.translatable(currentLvl));
-            tooltip.add(Text.literal(currentXp));
+        assert stack.getNbt() != null;
+        String currentXp = stack.getNbt().getString("toolfarming.levelTool.xp_progression");
+        String currentLvl = stack.getNbt().getString("toolfarming.levelTool.levelProgression");
+
+        tooltip.add(Text.translatable(currentLvl));
+        tooltip.add(Text.literal(currentXp));
+
+        if (getCurrentLevel(nbt) != 1){
+            String currentDamage = String.valueOf(getCurrentAttackDamage(nbt) + 4);
+            String currentSpeed = String.valueOf(getCurrentAttackSpeed(nbt) + 4);
+            tooltip.add(Text.literal(currentDamage));
+            tooltip.add(Text.literal(currentSpeed));
+        }
+
 
     }
 
@@ -147,21 +180,24 @@ public class LevelingSwordItem extends LevelingToolItem {
     }
 
     @Override
-    public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot) {
+    public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(ItemStack stack, EquipmentSlot slot) {
         if (slot == EquipmentSlot.MAINHAND) {
-            return this.attributeModifiers;
+
+             return this.attributeModifiers;
         }
         return super.getAttributeModifiers(slot);
     }
 
-    private void setAttackDamages(){
+    private void setAttackDamages() {
         attackDamages.forEach((n) -> n += getMaterial().getAttackDamage());
     }
 
-    public float getCurrentAttackDamage(NbtCompound nbt){
-        return attackDamages.get(getCurrentLevel(nbt));
+    public float getCurrentAttackDamage(NbtCompound nbt) {
+        return attackDamages.get(getCurrentLevel(nbt) - 1);
     }
 
-
+    public float getCurrentAttackSpeed(NbtCompound nbt) {
+        return attackSpeeds.get(getCurrentLevel(nbt) - 1);
+    }
 }
 

@@ -40,7 +40,7 @@ public class LevelingToolItem extends ToolItem {
 
     }
 
-    public void levelUp(NbtCompound nbt){
+    public void levelUp(NbtCompound nbt, ItemStack stack){
         this.setCurrentLevel(nbt, getCurrentLevel(nbt));
         this.setCurrentXp(nbt, 0);
     }
