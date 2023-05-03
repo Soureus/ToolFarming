@@ -3,13 +3,16 @@ package sour.toolfarming.item.tools;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolItem;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.predicate.NbtPredicate;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import javax.tools.Tool;
 import java.util.ArrayList;
@@ -40,9 +43,10 @@ public class LevelingToolItem extends ToolItem {
 
     }
 
-    public void levelUp(NbtCompound nbt, ItemStack stack){
+    public void levelUp(PlayerEntity player, NbtCompound nbt, ItemStack stack){
         this.setCurrentLevel(nbt, getCurrentLevel(nbt));
         this.setCurrentXp(nbt, 0);
+        player.sendMessage(Text.translatable(getStringName(stack, null) + " Has leveled up to level " + getCurrentLevel(nbt)));
     }
 
     //GETTERS & SETTERS
@@ -102,5 +106,13 @@ public class LevelingToolItem extends ToolItem {
 
     public void setCurrentLevel(NbtCompound nbt, int currentLevel) {
         nbt.putInt("toolfarming.levelTool.lvl_current", currentLevel);
+    }
+
+    public String getStringName(ItemStack stack, @Nullable String name) {
+//        if (stack.hasCustomName()){
+//            return stack.getName().toString();
+//        }else {
+            return name;
+        //}
     }
 }

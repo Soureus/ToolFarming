@@ -21,6 +21,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
@@ -36,13 +37,15 @@ public class LevelingSwordItem extends LevelingToolItem {
     ArrayList<Float> attackDamages;
     ArrayList<Float> attackSpeeds;
     private final Multimap<EntityAttribute, EntityAttributeModifier> attributeModifiers;
+    private final String name;
     ToolMaterial material;
 
-    public LevelingSwordItem(ToolMaterial material, ArrayList<Float> attackDamages, ArrayList<Float> attackSpeeds, int maxLevel, ArrayList<Float> levelsXp, Item.Settings settings) {
+    public LevelingSwordItem(ToolMaterial material, String name, ArrayList<Float> attackDamages, ArrayList<Float> attackSpeeds, int maxLevel, ArrayList<Float> levelsXp, Item.Settings settings) {
         super(material, settings, maxLevel, levelsXp);
         this.attackDamages = attackDamages;
         this.attackSpeeds = attackSpeeds;
         this.material = material;
+        this.name = name;
 
         setAttackDamages();
 
@@ -99,8 +102,7 @@ public class LevelingSwordItem extends LevelingToolItem {
         setNbtData(stack);
 
         if (getCurrentXp(nbt) >= getCurrentLvlXp(nbt)) {
-            levelUp(nbt, stack);
-            player.sendMessage(Text.literal(stack.getName().getContent() + "Has leveled up to level " + getCurrentLevel(nbt)));
+            levelUp(player, nbt, stack);
         }
 
     }
@@ -117,8 +119,8 @@ public class LevelingSwordItem extends LevelingToolItem {
     }
 
     @Override
-    public void levelUp(NbtCompound nbt, ItemStack stack) {
-        super.levelUp(nbt, stack);
+    public void levelUp(PlayerEntity player, NbtCompound nbt, ItemStack stack) {
+        super.levelUp(player, nbt, stack);
        setStackModifiers(stack);
     }
 
@@ -132,6 +134,7 @@ public class LevelingSwordItem extends LevelingToolItem {
 
         stack.addAttributeModifier(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", getCurrentAttackDamage(nbt), EntityAttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND);
         stack.addAttributeModifier(EntityAttributes.GENERIC_ATTACK_SPEED,new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Weapon modifier", getCurrentAttackSpeed(nbt), EntityAttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND);
+        stack.addHideFlag(ItemStack.TooltipSection.MODIFIERS);
 
     }
 
@@ -156,14 +159,19 @@ public class LevelingSwordItem extends LevelingToolItem {
         tooltip.add(Text.literal(currentXp));
 
         if (getCurrentLevel(nbt) != 1){
-            String currentDamage = String.valueOf(getCurrentAttackDamage(nbt) + 4);
-            String currentSpeed = String.valueOf(getCurrentAttackSpeed(nbt) + 4);
-            tooltip.add(Text.literal(currentDamage));
-            tooltip.add(Text.literal(currentSpeed));
+            int  currentAttackReal = (int)getCurrentAttackDamage(nbt) + 4;
+            float currentSpeedReal = getCurrentAttackSpeed(nbt) + 4;
+            tooltip.add(Text.literal(""));
+            tooltip.add(Text.translatable("item.modifiers.mainhand").formatted(Formatting.GRAY));
+            tooltip.add(Text.translatable("toolfarming.currentAttackDamageTooltip", currentAttackReal).formatted(Formatting.DARK_GREEN));
+            tooltip.add(Text.translatable("toolfarming.currentSpeedTooltip", currentSpeedReal).formatted(Formatting.DARK_GREEN));
         }
 
-
     }
+
+
+
+    //
 
 
     @Override
@@ -175,17 +183,17 @@ public class LevelingSwordItem extends LevelingToolItem {
     }
 
     @Override
-    public boolean isSuitableFor(BlockState state) {
-        return state.isOf(Blocks.COBWEB);
-    }
-
-    @Override
     public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(ItemStack stack, EquipmentSlot slot) {
         if (slot == EquipmentSlot.MAINHAND) {
 
-             return this.attributeModifiers;
+            return this.attributeModifiers;
         }
         return super.getAttributeModifiers(slot);
+    }
+
+    @Override
+    public boolean isSuitableFor(BlockState state) {
+        return state.isOf(Blocks.COBWEB);
     }
 
     private void setAttackDamages() {
@@ -198,6 +206,11 @@ public class LevelingSwordItem extends LevelingToolItem {
 
     public float getCurrentAttackSpeed(NbtCompound nbt) {
         return attackSpeeds.get(getCurrentLevel(nbt) - 1);
+    }
+
+    @Override
+    public String getStringName(ItemStack stack, @Nullable String name) {
+        return super.getStringName(stack, this.name);
     }
 }
 

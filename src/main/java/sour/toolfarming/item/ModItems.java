@@ -24,8 +24,8 @@ public class ModItems {
             new Item(new FabricItemSettings()));
 
     public static final Item LARYN_SWORD = registerItem("laryn_sword",
-            new LevelingSwordItem(ModToolMaterials.LARYN,
-                    LevelingToolsData.LARYN_SWORD_DAMAGES, LevelingToolsData.LARYN_SWORD_SPEEDS, LevelingToolsData.LARYN_TOOL_LEVELS, LevelingToolsData.LARYN_SWORD_EXP,
+            new LevelingSwordItem(ModToolMaterials.LARYN,"Laryn Sword",
+                    LevelingToolsData.LARYN_SWORD_DAMAGES,  LevelingToolsData.LARYN_SWORD_SPEEDS, LevelingToolsData.LARYN_TOOL_LEVELS, LevelingToolsData.LARYN_SWORD_EXP,
                     new FabricItemSettings()));
 
     private static Item registerItem(String name, Item item) {
