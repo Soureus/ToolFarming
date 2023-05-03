@@ -14,10 +14,6 @@ public class ModItemGroup {
 
     public static void registerItemGroups(){
 
-        CITRINE = FabricItemGroup.builder(new Identifier(ToolFarming.MOD_ID, "citrine"))
-                .displayName(Text.literal("Citrine Items"))
-                .icon(() -> new ItemStack(ModItems.CITRINE)).build();
-
         LARYN = FabricItemGroup.builder(new Identifier(ToolFarming.MOD_ID, "laryn"))
                 .displayName(Text.literal("Tool Farming"))
                 .icon(() -> new ItemStack(ModItems.LARYN_CRYSTAL)).build();

@@ -15,11 +15,6 @@ import sour.toolfarming.item.tools.tool_items.ModToolMaterials;
 public class ModItems {
 
 
-    public static final Item CITRINE = registerItem("citrine",
-            new Item(new FabricItemSettings()));
-    public static final Item RAW_CITRINE = registerItem("rawcitrine",
-            new Item(new FabricItemSettings()));
-
     public static final Item LARYN_CRYSTAL = registerItem("laryn_crystal",
             new Item(new FabricItemSettings()));
 
@@ -35,8 +30,6 @@ public class ModItems {
 
 
     public static void addItemsToItemGroup(){
-        addToItemGroup(ModItemGroup.CITRINE, CITRINE);
-        addToItemGroup(ModItemGroup.CITRINE, RAW_CITRINE);
         addToItemGroup(ModItemGroup.LARYN, LARYN_CRYSTAL);
         addToItemGroup(ModItemGroup.LARYN, LARYN_SWORD);
     }
