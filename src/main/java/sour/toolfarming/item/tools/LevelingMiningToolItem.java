@@ -1,10 +1,12 @@
-package sour.toolfarming.item.tools.swords;
+package sour.toolfarming.item.tools;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import net.fabricmc.fabric.api.block.v1.FabricBlock;
+import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
+import net.fabricmc.yarn.constants.MiningLevels;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.Material;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -13,105 +15,123 @@ import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import sour.toolfarming.item.tools.LevelingToolItem;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LevelingSwordItem extends LevelingToolItem {
+public class LevelingMiningToolItem extends LevelingToolItem{
 
-    ArrayList<Float> attackDamages;
-    ArrayList<Float> attackSpeeds;
+    private final ArrayList<Float> miningSpeeds;
+    private final TagKey<Block> effectiveBlocks;
     private final Multimap<EntityAttribute, EntityAttributeModifier> attributeModifiers;
     private final String NAME;
-    ToolMaterial material;
-
-    public LevelingSwordItem(ToolMaterial material, String name, ArrayList<Float> attackDamages, ArrayList<Float> attackSpeeds, int maxLevel, ArrayList<Float> levelsXp, Item.Settings settings) {
+    private final ArrayList<Float> attackDamages;
+    private final ArrayList<Float> attackSpeeds;
+    public LevelingMiningToolItem(ToolMaterial material, String name, Settings settings,ArrayList<Float> attackDamages, ArrayList<Float> attackSpeeds, TagKey<Block> effectiveBlocks, ArrayList<Float> miningSpeeds, int maxLevel, ArrayList<Float> levelsXp) {
         super(material, settings, maxLevel, levelsXp);
-        this.attackDamages = attackDamages;
-        this.attackSpeeds = attackSpeeds;
-        this.material = material;
-        this.NAME = name;
 
+        this.miningSpeeds = miningSpeeds;
+        this.effectiveBlocks = effectiveBlocks;
+        this.attackDamages = attackDamages;
+        this.NAME = name;
+        this.attackSpeeds = attackSpeeds;
+
+        setMiningSpeeds();
         setAttackDamages();
 
         ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder = ImmutableMultimap.builder();
-        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", (double) this.attackDamages.get(0) + material.getAttackDamage(), EntityAttributeModifier.Operation.ADDITION));
-        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Weapon modifier", (double) attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Tool modifier", (double)this.attackDamages.get(0), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Tool modifier", (double)attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
         this.attributeModifiers = builder.build();
     }
 
     @Override
-    public boolean canMine(BlockState state, World world, BlockPos pos, PlayerEntity miner) {
-        return !miner.isCreative();
-    }
-
-    @Override
     public float getMiningSpeedMultiplier(ItemStack stack, BlockState state) {
-        if (state.isOf(Blocks.COBWEB)) {
-            return 15.0f;
-        }
-        Material material = state.getMaterial();
-        if (material == Material.PLANT || material == Material.REPLACEABLE_PLANT || state.isIn(BlockTags.LEAVES) || material == Material.GOURD) {
-            return 1.5f;
-        }
-        return 1.0f;
+        NbtCompound nbt = stack.getOrCreateNbt();
+        return state.isIn(this.effectiveBlocks) ? this.miningSpeeds.get(0) : 1.0f;
     }
 
     @Override
     public boolean postHit(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        stack.damage(1, attacker, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
+        stack.damage(2, attacker, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
+        return true;
+    }
 
-        increaseXp(stack, attacker, target);
-        setStackModifiers(stack);
+    @Override
+    public boolean postMine(ItemStack stack, World world, BlockState state, BlockPos pos, LivingEntity miner) {
+        if (!world.isClient && state.getHardness(world, pos) != 0.0f) {
+            stack.damage(1, miner, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
+        }
+
+        increaseXp(stack, state, (PlayerEntity)miner);
 
         return true;
     }
 
 
-    protected void increaseXp(ItemStack stack, LivingEntity attacker, LivingEntity target) {
 
-        NbtCompound nbt = stack.getOrCreateNbt();
-
-        SpawnGroup spawnGroup = target.getType().getSpawnGroup();
-
-        PlayerEntity player = (PlayerEntity) attacker;
-
-        if (spawnGroup != SpawnGroup.MISC) {
-            if (spawnGroup.isPeaceful()) {
-                setCurrentXp(nbt, getCurrentXp(nbt) + 0.5f);
-            } else {
-                setCurrentXp(nbt, getCurrentXp(nbt) + 50f);
-            }
+    @Override
+    public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.MAINHAND) {
+            return this.attributeModifiers;
         }
-
-        setNbtData(stack);
-
-        if (getCurrentXp(nbt) >= getCurrentLvlXp(nbt)) {
-            levelUp(player, nbt, stack);
-        }
-
+        return super.getAttributeModifiers(slot);
     }
 
     @Override
-    public void levelUp(PlayerEntity player, NbtCompound nbt, ItemStack stack) {
-        super.levelUp(player, nbt, stack);
-       setStackModifiers(stack);
+    public boolean isSuitableFor(BlockState state) {
+        int i = this.getMaterial().getMiningLevel();
+        if (i < MiningLevels.DIAMOND && state.isIn(BlockTags.NEEDS_DIAMOND_TOOL)) {
+            return false;
+        }
+        if (i < MiningLevels.IRON && state.isIn(BlockTags.NEEDS_IRON_TOOL)) {
+            return false;
+        }
+        if (i < MiningLevels.STONE && state.isIn(BlockTags.NEEDS_STONE_TOOL)) {
+            return false;
+        }
+        return state.isIn(this.effectiveBlocks);
     }
+
+    //XP
+
+    protected void increaseXp(ItemStack stack, BlockState state, PlayerEntity miner) {
+
+        NbtCompound nbt = stack.getOrCreateNbt();
+
+        boolean diamondTool = state.isIn(BlockTags.NEEDS_DIAMOND_TOOL);
+        boolean ironTool = state.isIn(BlockTags.NEEDS_IRON_TOOL);
+        boolean stoneTool = state.isIn(BlockTags.NEEDS_STONE_TOOL);
+
+        if (stoneTool) {
+                setCurrentXp(nbt, getCurrentXp(nbt) + 2f);
+        }else if(ironTool){
+            setCurrentXp(nbt, getCurrentXp(nbt) + 5f);
+        } else if (diamondTool) {
+            setCurrentXp(nbt, getCurrentXp(nbt) + 10f);
+        }else {
+            setCurrentXp(nbt, getCurrentXp(nbt) + 1f);
+        }
+
+        //setNbtData(stack);
+
+        if (getCurrentXp(nbt) >= getCurrentLvlXp(nbt)) {
+            levelUp(miner, nbt, stack);
+        }
+    }
+
+    //TOOLTIP THINGS
 
     public void setStackModifiers(ItemStack stack){
 
@@ -126,8 +146,6 @@ public class LevelingSwordItem extends LevelingToolItem {
         stack.addHideFlag(ItemStack.TooltipSection.MODIFIERS);
 
     }
-
-    @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 
         NbtCompound nbt = stack.getOrCreateNbt();
@@ -154,21 +172,9 @@ public class LevelingSwordItem extends LevelingToolItem {
             tooltip.add(Text.translatable("item.modifiers.mainhand").formatted(Formatting.GRAY));
             tooltip.add(Text.translatable("toolfarming.currentAttackDamageTooltip", currentAttackReal).formatted(Formatting.DARK_GREEN));
             tooltip.add(Text.translatable("toolfarming.currentSpeedTooltip", currentSpeedReal).formatted(Formatting.DARK_GREEN));
+            tooltip.add(Text.translatable("toolfarming.currentMiningSpeedTooltip", getCurrentMiningSpeed(nbt)));
         }
 
-    }
-
-
-
-    //
-
-
-    @Override
-    public boolean postMine(ItemStack stack, World world, BlockState state, BlockPos pos, LivingEntity miner) {
-        if (state.getHardness(world, pos) != 0.0f) {
-            stack.damage(2, miner, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
-        }
-        return true;
     }
 
     @Override
@@ -180,9 +186,14 @@ public class LevelingSwordItem extends LevelingToolItem {
         return super.getAttributeModifiers(slot);
     }
 
-    @Override
-    public boolean isSuitableFor(BlockState state) {
-        return state.isOf(Blocks.COBWEB);
+    //GETTERS & SETTERS
+
+    private void setMiningSpeeds() {
+        miningSpeeds.forEach((n) -> n += getMaterial().getMiningSpeedMultiplier());
+    }
+
+    public float getCurrentMiningSpeed(NbtCompound nbt) {
+        return miningSpeeds.get(getCurrentLevel(nbt) - 1);
     }
 
     private void setAttackDamages() {
@@ -202,4 +213,3 @@ public class LevelingSwordItem extends LevelingToolItem {
         return super.getStringName(stack, this.NAME);
     }
 }
-

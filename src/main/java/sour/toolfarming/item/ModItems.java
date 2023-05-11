@@ -9,6 +9,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import sour.toolfarming.ToolFarming;
 import sour.toolfarming.item.tools.LevelingToolsData;
+import sour.toolfarming.item.tools.pickaxes.LevelingPickaxeItem;
 import sour.toolfarming.item.tools.swords.LevelingSwordItem;
 import sour.toolfarming.item.tools.tool_items.ModToolMaterials;
 
@@ -23,6 +24,14 @@ public class ModItems {
                     LevelingToolsData.LARYN_SWORD_DAMAGES,  LevelingToolsData.LARYN_SWORD_SPEEDS, LevelingToolsData.LARYN_TOOL_LEVELS, LevelingToolsData.LARYN_SWORD_EXP,
                     new FabricItemSettings()));
 
+    public static final Item LARYN_PICKAXE = registerItem("laryn_pickaxe",
+            new LevelingPickaxeItem(ModToolMaterials.LARYN, "Laryn Pickaxe", new FabricItemSettings(),
+                                    LevelingToolsData.LARYN_PICKAXE_DAMAGES, LevelingToolsData.LARYN_PICKAXE_ATTACK_SPEEDS, LevelingToolsData.LARYN_PICKAXE_MINING_SPEEDS,
+                                    LevelingToolsData.LARYN_TOOL_LEVELS, LevelingToolsData.LARYN_SWORD_EXP
+    ));
+
+
+    //UTILS
     private static Item registerItem(String name, Item item) {
         return Registry.register(Registries.ITEM, new Identifier(ToolFarming.MOD_ID, name), item);
     }
@@ -32,6 +41,7 @@ public class ModItems {
     public static void addItemsToItemGroup(){
         addToItemGroup(ModItemGroup.LARYN, LARYN_CRYSTAL);
         addToItemGroup(ModItemGroup.LARYN, LARYN_SWORD);
+        addToItemGroup(ModItemGroup.LARYN, LARYN_PICKAXE);
     }
 
     public static void addToItemGroup(ItemGroup group, Item item){

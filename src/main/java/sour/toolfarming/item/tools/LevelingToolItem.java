@@ -49,6 +49,17 @@ public class LevelingToolItem extends ToolItem {
         player.sendMessage(Text.translatable(getStringName(stack, null) + " Has leveled up to level " + getCurrentLevel(nbt)));
     }
 
+    protected void setNbtData(ItemStack stack) {
+        NbtCompound nbt = stack.getOrCreateNbt();
+
+        assert nbt != null;
+        if (getCurrentLevel(nbt) != getMAX_LEVEL()) {
+            nbt.putFloat("toolfarming.levelTool.lvl_xp_current", this.getCurrentLvlXp(nbt));
+        }
+
+
+    }
+
     //GETTERS & SETTERS
 
 

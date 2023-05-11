@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public enum ModToolMaterials implements ToolMaterial {
 
-    LARYN(MiningLevels.IRON, 250, 4.5f, 2.0f, 0, () -> Ingredient.ofItems(ModItems.LARYN_CRYSTAL));
+    LARYN(MiningLevels.IRON, 250, 6.0f, 2.0f, 0, () -> Ingredient.ofItems(ModItems.LARYN_CRYSTAL));
 
     private final int miningLevel;
     private final int itemDurability;
