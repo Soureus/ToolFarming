@@ -9,7 +9,6 @@ import sour.toolfarming.ToolFarming;
 
 public class ModItemGroup {
 
-    public static ItemGroup CITRINE;
     public static ItemGroup LARYN;
 
     public static void registerItemGroups(){

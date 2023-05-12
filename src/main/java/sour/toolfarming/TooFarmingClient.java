@@ -11,6 +11,4 @@ public class TooFarmingClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
-       // EntityRendererRegistry.register(ModEntities.FAT_BOY, FatBoyRenderer::new);
-
 }}

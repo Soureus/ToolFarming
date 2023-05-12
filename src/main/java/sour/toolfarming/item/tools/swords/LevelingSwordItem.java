@@ -47,7 +47,7 @@ public class LevelingSwordItem extends LevelingToolItem {
         this.material = material;
         this.NAME = name;
 
-        setAttackDamages();
+        //setAttackDamages();
 
         ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder = ImmutableMultimap.builder();
         builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Weapon modifier", (double) this.attackDamages.get(0) + material.getAttackDamage(), EntityAttributeModifier.Operation.ADDITION));
@@ -147,8 +147,8 @@ public class LevelingSwordItem extends LevelingToolItem {
         tooltip.add(Text.translatable(currentLvl));
         tooltip.add(Text.literal(currentXp));
 
-        if (getCurrentLevel(nbt) != 1){
-            int  currentAttackReal = (int)getCurrentAttackDamage(nbt) + 4;
+        if (getCurrentLevel(nbt) != 1 || getCurrentXp(nbt) != 0){
+            float  currentAttackReal = getCurrentAttackDamage(nbt) + 1;
             float currentSpeedReal = getCurrentAttackSpeed(nbt) + 4;
             tooltip.add(Text.literal(""));
             tooltip.add(Text.translatable("item.modifiers.mainhand").formatted(Formatting.GRAY));
@@ -185,12 +185,13 @@ public class LevelingSwordItem extends LevelingToolItem {
         return state.isOf(Blocks.COBWEB);
     }
 
-    private void setAttackDamages() {
-        attackDamages.forEach((n) -> n += getMaterial().getAttackDamage());
-    }
+        //not used anymore now but keeping it just in case
+        private void setAttackDamages() {
+            this.attackDamages.replaceAll(ignored -> this.attackDamages.get(1) + getMaterial().getAttackDamage());
+        }
 
     public float getCurrentAttackDamage(NbtCompound nbt) {
-        return attackDamages.get(getCurrentLevel(nbt) - 1);
+        return attackDamages.get(getCurrentLevel(nbt) - 1) + getMaterial().getAttackDamage();
     }
 
     public float getCurrentAttackSpeed(NbtCompound nbt) {
