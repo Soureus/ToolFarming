@@ -27,9 +27,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-
 public class LevelingMiningToolItem extends LevelingToolItem{
 
     ArrayList<Float> miningSpeeds;
@@ -48,8 +50,8 @@ public class LevelingMiningToolItem extends LevelingToolItem{
         this.attackSpeeds = attackSpeeds;
 
         ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder = ImmutableMultimap.builder();
-        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Tool modifier", (double)this.attackDamages.get(0), EntityAttributeModifier.Operation.ADDITION));
-        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Tool modifier", (double)attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Tool modifier", (double)this.attackDamages.get(0) + material.getAttackDamage(), EntityAttributeModifier.Operation.ADDITION));
+        builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Tool modifier", (double) this.attackSpeeds.get(0), EntityAttributeModifier.Operation.ADDITION));
         this.attributeModifiers = builder.build();
     }
 
@@ -124,6 +126,8 @@ public class LevelingMiningToolItem extends LevelingToolItem{
 
         //setNbtData(stack);
 
+        //setStackModifiers(stack);
+
         if (getCurrentXp(nbt) >= getCurrentLvlXp(nbt)) {
             levelUp(miner, nbt, stack);
         }
@@ -149,6 +153,8 @@ public class LevelingMiningToolItem extends LevelingToolItem{
         NbtCompound nbt = stack.getOrCreateNbt();
         stack.addHideFlag(ItemStack.TooltipSection.MODIFIERS);
 
+        tooltip.add(Text.literal("----------------").formatted(Formatting.GRAY));
+
         if (getCurrentLevel(nbt) != getMAX_LEVEL()) {
             nbt.putString("toolfarming.levelTool.xp_progression", "XP: " + this.getCurrentXp(nbt) + "/" + this.getCurrentLvlXp(nbt));
         } else {
@@ -161,15 +167,16 @@ public class LevelingMiningToolItem extends LevelingToolItem{
         String currentXp = stack.getNbt().getString("toolfarming.levelTool.xp_progression");
         String currentLvl = stack.getNbt().getString("toolfarming.levelTool.levelProgression");
 
-        tooltip.add(Text.translatable(currentLvl));
-        tooltip.add(Text.literal(currentXp));
+        tooltip.add(Text.translatable(currentLvl).formatted(Formatting.DARK_AQUA));
+        tooltip.add(Text.literal(currentXp).formatted(Formatting.AQUA));
 
-            float currentSpeedReal = getCurrentAttackSpeed(nbt) + 4;
+            double currentSpeedReal = Math.round((getCurrentAttackSpeed(nbt) + 4.0f) * 100)/100.00;
             tooltip.add(Text.literal(""));
             tooltip.add(Text.translatable("item.modifiers.mainhand").formatted(Formatting.GRAY));
-            tooltip.add(Text.translatable("toolfarming.currentAttackDamageTooltip", getCurrentAttackDamage(nbt)).formatted(Formatting.DARK_GREEN));
+            tooltip.add(Text.translatable("toolfarming.currentAttackDamageTooltip", getCurrentAttackDamage(nbt) + 1).formatted(Formatting.DARK_GREEN));
             tooltip.add(Text.translatable("toolfarming.currentSpeedTooltip", currentSpeedReal).formatted(Formatting.DARK_GREEN));
             tooltip.add(Text.translatable("toolfarming.currentMiningSpeedTooltip", getCurrentMiningSpeed(nbt)).formatted(Formatting.DARK_GREEN));
+        tooltip.add(Text.literal(""));
 
     }
 

@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnGroup;
@@ -76,8 +77,10 @@ public class LevelingSwordItem extends LevelingToolItem {
     public boolean postHit(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         stack.damage(1, attacker, e -> e.sendEquipmentBreakStatus(EquipmentSlot.MAINHAND));
 
-        increaseXp(stack, attacker, target);
-        setStackModifiers(stack);
+        if (target.getHealth() == 0) {
+            increaseXp(stack, attacker, target);
+            setStackModifiers(stack);
+        }
 
         return true;
     }
@@ -92,12 +95,24 @@ public class LevelingSwordItem extends LevelingToolItem {
         PlayerEntity player = (PlayerEntity) attacker;
 
         if (spawnGroup != SpawnGroup.MISC) {
-            if (spawnGroup.isPeaceful()) {
+            if (spawnGroup.equals(SpawnGroup.AMBIENT) || spawnGroup.equals(SpawnGroup.WATER_AMBIENT) || spawnGroup.equals(SpawnGroup.AXOLOTLS) ||
+                    spawnGroup.equals(SpawnGroup.UNDERGROUND_WATER_CREATURE) || target.getWidth() < 0.5){
                 setCurrentXp(nbt, getCurrentXp(nbt) + 0.5f);
-            } else {
-                setCurrentXp(nbt, getCurrentXp(nbt) + 50f);
             }
-        }
+            else if (spawnGroup.isPeaceful()) {
+                setCurrentXp(nbt, getCurrentXp(nbt) + 1f);
+            }else if (target.getType() == EntityType.GHAST || target.getType() == EntityType.ENDERMAN || target.getType() == EntityType.BLAZE ||
+                    target.getType() == EntityType.ZOMBIE_VILLAGER || target.getType() == EntityType.WITCH || target.getType() == EntityType.WITHER_SKELETON ||
+                    target.getType() == EntityType.ZOMBIE_VILLAGER) {
+                setCurrentXp(nbt, getCurrentXp(nbt) + 2f);
+            }else if (target.getType() == EntityType.ENDER_DRAGON || target.getType() == EntityType.WARDEN){
+                setCurrentXp(nbt, getCurrentXp(nbt) + 50f);
+            }else if(target.getType() == EntityType.WITHER || target.getType() == EntityType.ELDER_GUARDIAN){
+                setCurrentXp(nbt, getCurrentXp(nbt) + 25f);
+            }else{
+                setCurrentXp(nbt, getCurrentXp(nbt) + 1f);
+            }
+            }
 
         setNbtData(stack);
 
@@ -132,6 +147,8 @@ public class LevelingSwordItem extends LevelingToolItem {
 
         NbtCompound nbt = stack.getOrCreateNbt();
 
+        tooltip.add(Text.literal(""));
+
         if (getCurrentLevel(nbt) != getMAX_LEVEL()) {
             nbt.putString("toolfarming.levelTool.xp_progression", "XP: " + this.getCurrentXp(nbt) + "/" + this.getCurrentLvlXp(nbt));
         } else {
@@ -144,8 +161,8 @@ public class LevelingSwordItem extends LevelingToolItem {
         String currentXp = stack.getNbt().getString("toolfarming.levelTool.xp_progression");
         String currentLvl = stack.getNbt().getString("toolfarming.levelTool.levelProgression");
 
-        tooltip.add(Text.translatable(currentLvl));
-        tooltip.add(Text.literal(currentXp));
+        tooltip.add(Text.translatable(currentLvl).formatted(Formatting.DARK_AQUA));
+        tooltip.add(Text.literal(currentXp).formatted(Formatting.AQUA));
 
         if (getCurrentLevel(nbt) != 1 || getCurrentXp(nbt) != 0){
             float  currentAttackReal = getCurrentAttackDamage(nbt) + 1;
@@ -154,6 +171,7 @@ public class LevelingSwordItem extends LevelingToolItem {
             tooltip.add(Text.translatable("item.modifiers.mainhand").formatted(Formatting.GRAY));
             tooltip.add(Text.translatable("toolfarming.currentAttackDamageTooltip", currentAttackReal).formatted(Formatting.DARK_GREEN));
             tooltip.add(Text.translatable("toolfarming.currentSpeedTooltip", currentSpeedReal).formatted(Formatting.DARK_GREEN));
+            tooltip.add(Text.literal(""));
         }
 
     }

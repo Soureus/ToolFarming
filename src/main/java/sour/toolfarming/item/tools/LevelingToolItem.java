@@ -21,9 +21,7 @@ import java.util.EventListener;
 public class LevelingToolItem extends ToolItem {
 
     private final int MAX_LEVEL;
-    private int currentLevel;
     private ArrayList<Float> levelsXp;
-    private float currentXp;
     NbtCompound nbt;
 
     private final ToolMaterial MATERIAL;
@@ -34,9 +32,6 @@ public class LevelingToolItem extends ToolItem {
         this.MATERIAL = material;
         this.MAX_LEVEL = maxLevel;
         this.levelsXp = levelsXp;
-
-        currentLevel = 1;
-        currentXp = 0;
 
         nbt = this.getDefaultStack().getOrCreateNbt();
 
